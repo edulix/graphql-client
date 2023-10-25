@@ -60,6 +60,7 @@ fn build_graphql_client_derive_options(
     query_path: PathBuf,
 ) -> Result<GraphQLClientCodegenOptions, syn::Error> {
     let variables_derives = attributes::extract_attr(input, "variables_derives").ok();
+    let serde_crate = attributes::extract_attr(input, "serde_crate").ok();
     let response_derives = attributes::extract_attr(input, "response_derives").ok();
     let custom_scalars_module = attributes::extract_attr(input, "custom_scalars_module").ok();
     let extern_enums = attributes::extract_attr_list(input, "extern_enums").ok();
@@ -78,6 +79,10 @@ fn build_graphql_client_derive_options(
     if let Some(response_derives) = response_derives {
         options.set_response_derives(response_derives);
     };
+
+    if let Some(serde_crate) = serde_crate {
+        options.set_serde_crate(serde_crate);
+    }
 
     // The user can determine what to do about deprecations.
     if let Ok(deprecation_strategy) = attributes::extract_deprecation_strategy(input) {

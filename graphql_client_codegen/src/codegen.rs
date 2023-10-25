@@ -22,8 +22,9 @@ pub(crate) fn response_for_query(
     query: BoundQuery<'_>,
 ) -> Result<TokenStream, GeneralError> {
     let all_used_types = all_used_types(operation_id, &query);
-    let response_derives = render_derives(options.all_response_derives());
-    let variable_derives = render_derives(options.all_variable_derives());
+    let serde_crate = options.serde_crate();
+    let response_derives = render_derives(options.all_response_derives(), &serde_crate);
+    let variable_derives = render_derives(options.all_variable_derives(), &serde_crate);
 
     let scalar_definitions = generate_scalar_definitions(&all_used_types, options, query);
     let enum_definitions = enums::generate_enum_definitions(&all_used_types, options, query);
@@ -43,7 +44,7 @@ pub(crate) fn response_for_query(
         render_response_data_fields(operation_id, options, &query).render(&response_derives);
 
     let q = quote! {
-        use serde::{Serialize, Deserialize};
+        use #serde_crate::{Serialize, Deserialize};
         use super::*;
 
         #[allow(dead_code)]
@@ -162,14 +163,17 @@ fn generate_scalar_definitions<'a, 'schema: 'a>(
         })
 }
 
-fn render_derives<'a>(derives: impl Iterator<Item = &'a str>) -> impl quote::ToTokens {
+fn render_derives<'a>(derives: impl Iterator<Item = &'a str>, serde_crate: &String) -> impl quote::ToTokens {
     let idents = derives.map(|s| {
         syn::parse_str::<syn::Path>(s)
             .map_err(|e| format!("couldn't parse {} as a derive Path: {}", s, e))
             .unwrap()
     });
 
-    quote!(#[derive(#(#idents),*)])
+    quote! {
+        #[derive(#(#idents),*)]
+        #[serde(crate = "#serde_crate")]
+    }
 }
 
 fn render_variable_field_type(

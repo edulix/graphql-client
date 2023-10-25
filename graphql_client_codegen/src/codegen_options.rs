@@ -47,6 +47,8 @@ pub struct GraphQLClientCodegenOptions {
     fragments_other_variant: bool,
     /// Skip Serialization of None values.
     skip_serializing_none: bool,
+    /// Reference to the serde crate to use
+    pub serde_crate: Option<String>,
 }
 
 impl GraphQLClientCodegenOptions {
@@ -68,6 +70,7 @@ impl GraphQLClientCodegenOptions {
             extern_enums: Default::default(),
             fragments_other_variant: Default::default(),
             skip_serializing_none: Default::default(),
+            serde_crate: Default::default(),
         }
     }
 
@@ -226,5 +229,15 @@ impl GraphQLClientCodegenOptions {
     /// Get a reference to the graphql client codegen option's skip none value.
     pub fn skip_serializing_none(&self) -> &bool {
         &self.skip_serializing_none
+    }
+
+    /// Set the serde crate to use.
+    pub fn set_serde_crate(&mut self, serde_crate: String) {
+        self.serde_crate = Some(serde_crate)
+    }
+
+    /// Get a reference to the serde crate to use.
+    pub fn serde_crate(&self) -> String {
+        self.serde_crate.clone().unwrap_or(String::from("serde"))
     }
 }

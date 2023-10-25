@@ -22,7 +22,8 @@ pub(super) fn generate_enum_definitions<'a, 'schema: 'a>(
         .filter(|d| !&["Serialize", "Deserialize", "Default"].contains(d))
         // Use BTreeSet instead of HashSet for a stable ordering.
         .collect::<std::collections::BTreeSet<_>>();
-    let derives = render_derives(traits.into_iter());
+    let serde_crate = options.serde_crate();
+    let derives = render_derives(traits.into_iter(), &serde_crate);
     let normalization = options.normalization();
 
     all_used_types.enums(query.schema)
@@ -66,8 +67,8 @@ pub(super) fn generate_enum_definitions<'a, 'schema: 'a>(
                 Other(String),
             }
 
-            impl ::serde::Serialize for #name {
-                fn serialize<S: serde::Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+            impl #serde_crate::Serialize for #name {
+                fn serialize<S: #serde_crate::Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
                     ser.serialize_str(match *self {
                         #(#constructors => #variant_str,)*
                         #name::Other(ref s) => &s,
@@ -75,9 +76,9 @@ pub(super) fn generate_enum_definitions<'a, 'schema: 'a>(
                 }
             }
 
-            impl<'de> ::serde::Deserialize<'de> for #name {
-                fn deserialize<D: ::serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-                    let s: String = ::serde::Deserialize::deserialize(deserializer)?;
+            impl<'de> #serde_crate::Deserialize<'de> for #name {
+                fn deserialize<D: #serde_crate::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                    let s: String = #serde_crate::Deserialize::deserialize(deserializer)?;
 
                     match s.as_str() {
                         #(#variant_str => Ok(#constructors),)*
